@@ -104,6 +104,22 @@ export class JobWorker {
     });
   }
 
+  public registerSignalHandlers(signalNames: string[] = ["SIGTERM", "SIGINT"]): () => void {
+    const handlers = signalNames.map((signal) => {
+      const onSignal = async () => {
+        logger.warn({ signal }, "received shutdown signal; draining in-flight jobs");
+        await this.stop(30_000);
+      };
+
+      process.on(signal, onSignal);
+      return { signal, onSignal };
+    });
+
+    return () => {
+      handlers.forEach(({ signal, onSignal }) => process.removeListener(signal, onSignal));
+    };
+  }
+
   public getActiveCount(): number {
     return this.activeJobsCount;
   }

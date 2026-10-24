@@ -16,6 +16,12 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
   capacity_providers = ["FARGATE", "FARGATE_SPOT"]
 
   default_capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 4
+    base              = 0
+  }
+
+  default_capacity_provider_strategy {
     capacity_provider = "FARGATE"
     weight            = 1
     base              = 1
@@ -143,9 +149,14 @@ resource "aws_ecs_service" "backend" {
   cluster                            = aws_ecs_cluster.main.id
   task_definition                    = aws_ecs_task_definition.backend.arn
   desired_count                      = var.desired_count
-  launch_type                        = "FARGATE"
   enable_execute_command             = false
   health_check_grace_period_seconds  = 60
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 1
+    base              = 1
+  }
 
   network_configuration {
     subnets          = var.private_subnet_ids
